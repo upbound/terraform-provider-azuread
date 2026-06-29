@@ -15,6 +15,8 @@ import (
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"github.com/hashicorp/go-azure-sdk/microsoft-graph/me/stable/me"
 	"github.com/hashicorp/go-azure-sdk/microsoft-graph/serviceprincipals/stable/serviceprincipal"
+	sdkclient "github.com/hashicorp/go-azure-sdk/sdk/client"
+	"github.com/hashicorp/go-azure-sdk/sdk/client/msgraph"
 	"github.com/hashicorp/go-azure-sdk/sdk/claims"
 	"github.com/hashicorp/go-azure-sdk/sdk/environments"
 	"github.com/hashicorp/terraform-provider-azuread/internal/common"
@@ -63,6 +65,10 @@ type Client struct {
 	Synchronization     *synchronization.Client
 	UserFlows           *userflows.Client
 	Users               *users.Client
+
+	// msgraphClients holds every *msgraph.Client registered during build.
+	// Populated once by build(); read by AppendResponseMiddleware.
+	msgraphClients []*msgraph.Client
 }
 
 func (client *Client) build(ctx context.Context, o *common.ClientOptions) error {
@@ -189,5 +195,14 @@ func (client *Client) build(ctx context.Context, o *common.ClientOptions) error 
 		return fmt.Errorf("parsing claims in access token: oid claim is empty")
 	}
 
+	client.msgraphClients = o.ConfiguredClients()
 	return nil
+}
+
+// AppendResponseMiddleware registers mw with every Microsoft Graph SDK client
+// that was configured during provider initialisation.
+func (c *Client) AppendResponseMiddleware(mw sdkclient.ResponseMiddleware) {
+	for _, mc := range c.msgraphClients {
+		mc.AppendResponseMiddleware(mw)
+	}
 }
