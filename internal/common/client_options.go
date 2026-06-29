@@ -30,13 +30,21 @@ type ClientOptions struct {
 	TerraformVersion string
 
 	Authorizer auth.Authorizer
+
+	configuredClients []*msgraph.Client
 }
 
-func (o ClientOptions) Configure(c *msgraph.Client) {
+func (o *ClientOptions) Configure(c *msgraph.Client) {
 	c.SetAuthorizer(o.Authorizer)
 	c.SetUserAgent(o.userAgent(c.UserAgent))
 	c.AppendRequestMiddleware(o.requestLogger)
 	c.AppendResponseMiddleware(o.responseLogger)
+	o.configuredClients = append(o.configuredClients, c)
+}
+
+// ConfiguredClients returns all *msgraph.Client instances registered via Configure.
+func (o *ClientOptions) ConfiguredClients() []*msgraph.Client {
+	return o.configuredClients
 }
 
 func (o ClientOptions) requestLogger(req *http.Request) (*http.Request, error) {
