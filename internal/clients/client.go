@@ -206,3 +206,11 @@ func (c *Client) AppendResponseMiddleware(mw sdkclient.ResponseMiddleware) {
 		mc.AppendResponseMiddleware(mw)
 	}
 }
+
+// AppendRequestMiddleware registers request mw with every Microsoft Graph SDK
+// client that was configured during provider initialisation.
+func (c *Client) AppendRequestMiddleware(mw sdkclient.RequestMiddleware) {
+	for _, mc := range c.msgraphClients {
+		mc.AppendRequestMiddleware(mw)
+	}
+}

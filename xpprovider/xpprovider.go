@@ -5,6 +5,7 @@ import (
 
 	sdkclient "github.com/hashicorp/go-azure-sdk/sdk/client"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
 	"github.com/hashicorp/terraform-provider-azuread/internal/clients"
 	"github.com/hashicorp/terraform-provider-azuread/internal/provider"
 )
@@ -28,5 +29,17 @@ func RegisterResponseMiddleware(meta any, mw sdkclient.ResponseMiddleware) bool 
 		return false
 	}
 	c.AppendResponseMiddleware(mw)
+	return true
+}
+
+// RegisterRequestMiddleware appends request mw to every Microsoft Graph SDK
+// client held by meta (the value returned by schema.Provider.Meta()).
+// It returns false when meta is not a *clients.Client.
+func RegisterRequestMiddleware(meta any, mw sdkclient.RequestMiddleware) bool {
+	c, ok := meta.(*clients.Client)
+	if !ok {
+		return false
+	}
+	c.AppendRequestMiddleware(mw)
 	return true
 }
